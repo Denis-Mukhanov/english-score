@@ -54,14 +54,14 @@ def stemmer_lemmatizer(x):
     return lemmatizer
 
 # oxford by CEFR
-a1_list = next(csv.reader(open('a1.csv', 'r')))
-a2_list = next(csv.reader(open('a2.csv', 'r')))
-b1_list = next(csv.reader(open('b1.csv', 'r')))
-b2_list = next(csv.reader(open('b2.csv', 'r')))
-c1_list = next(csv.reader(open('c1.csv', 'r')))
+a1_list = next(csv.reader(open('data/a1.csv', 'r')))
+a2_list = next(csv.reader(open('data/a2.csv', 'r')))
+b1_list = next(csv.reader(open('data/b1.csv', 'r')))
+b2_list = next(csv.reader(open('data/b2.csv', 'r')))
+c1_list = next(csv.reader(open('data/c1.csv', 'r')))
 # model
 model = CatBoostRegressor()
-model.load_model('catboost_model')
+model.load_model('models/catboost_model')
 # CSS стиль для центрирования заголовка
 title_style = """
     <style>
