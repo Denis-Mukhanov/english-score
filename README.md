@@ -1,6 +1,6 @@
 <div style="padding: 30px 25px; border: 2px #6495ed solid">
     
-__[Веб-приложение]('https://denis-mukhanov-english-scors-eng-japw1k.streamlit.app/')__  
+[Веб-приложение]('https://denis-mukhanov-english-scors-eng-japw1k.streamlit.app/')
 
 __Проект:__ Определение уровня сложности англоязычных фильмов
 
