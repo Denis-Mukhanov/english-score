@@ -6,6 +6,8 @@ import re
 import pandas as pd
 import numpy as np
 
+from langdetect import detect
+
 import nltk
 nltk.download('punkt')
 nltk.download('stopwords')
@@ -26,6 +28,14 @@ LETTERS = r'[^a-zA-Z\'.,!? ]'
 SPACES = r'([ ])\1+'
 DOTS = r'[\.]+'
 CLEAN = re.compile('[^а-яa-z\s]')
+
+# Функция для определения языка текста
+def detect_language(text):
+    try:
+        lang = detect(text)
+        return lang
+    except:
+        return None
 
 # функция для первичной обработки текста
 def clean_subs(txt):
@@ -73,18 +83,30 @@ title_style = """
 # Вставляем CSS стиль перед заголовком
 st.markdown(title_style, unsafe_allow_html=True)
 # Заголовок
-st.markdown("<h1 class='title'>Определение уровня сложности англоязычных фильмов</h1>", unsafe_allow_html=True)
+st.markdown("<h1 class='title'>Определение уровня сложности английского</h1>", unsafe_allow_html=True)
 image = "https://i.postimg.cc/GpMx0rJ0/image.png"
 st.image(image, caption="", use_column_width=True)
 
 # Отступ
 st.write("")
 # Поле для ввода текста пользователем
-user_text = st.text_area("Введите текст:", "")
+st.markdown("<h5 class='title'>Введите текст:</h5>", unsafe_allow_html=True)
+user_text = st.text_area("")
+if len(user_text) !=0:
+    if st.button("Определить уровень сложности текста"):
+         lang = detect_language(user_text)
+         if lang == 'en':
+             st.write("Текст написан на английском языке.")
+         else:
+             st.write(f"Текст написан на языке: {lang}")
+
 # Описание поля загрузки файла
-st.write("Для отпределиния уровня сложности англоязычных фильмов загрузите файл с субтитрами:")
+st.write("")
+st.markdown("<h5 class='title'>Для отпределиния уровня сложности англоязычных фильмов загрузите файл с субтитрами:</h5>", unsafe_allow_html=True)
+# st.write("Для отпределиния уровня сложности англоязычных фильмов загрузите файл с субтитрами:")
 # Поле для загрузки файла .srt
 srt_file = st.file_uploader("", type=".srt")
+
 
 if srt_file:
     # Получаем байтовый поток для загруженного файла
