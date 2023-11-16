@@ -62,7 +62,26 @@ def stemmer_lemmatizer(x):
     stemmer = [porter_stemmer.stem(s) for s in x]
     lemmatizer = [wordnet_lemmatizer.lemmatize(w) for w in stemmer]
     return lemmatizer
+# функция для fres/fkgl
+def fres_fkgl(txt):
+    sentences = len(re.split(r"[.!?]", txt))
+    words = len(txt.split(' '))
+    syllables = sum(txt.count(g) for g in 'aeoiu') + txt.count('y') / 2
 
+    fres = 206.835 - (words / sentences) * 1.015 - (syllables / words) * 84.6
+    fkgl = (words / sentences) * 0.39 + (syllables / words) * 11.8 - 15.59
+
+    return fres, fkgl
+
+# функция для расчета cerf
+def cerf(predictions):
+    if predictions < 3.5: return 'A1/A2'
+    elif predictions < 4: return 'A2/B1'
+    elif predictions < 5: return 'B1'
+    elif predictions < 5.5: return 'B1/B2'
+    elif predictions < 6.5: return 'B2'
+    elif predictions < 7: return 'B1/C1'
+    else: return 'C1'
 # oxford by CEFR
 a1_list = next(csv.reader(open('data/a1.csv', 'r')))
 a2_list = next(csv.reader(open('data/a2.csv', 'r')))
@@ -96,9 +115,49 @@ if len(user_text) !=0:
     if st.button("Определить уровень сложности текста"):
          lang = detect_language(user_text)
          if lang == 'en':
-             st.write("Текст написан на английском языке.")
+             try:
+                 fres, fkgl = fres_fkgl(user_text)
+
+                 # Очистка
+                 user_text = clean_subs(user_text)
+                 user_text = stopwords_tokenize(user_text)
+                 user_text = stemmer_lemmatizer(user_text)
+
+                  # oxford by CEFR
+                 a1 = sum(1 for i in user_text if i in a1_list)
+                 a2 = sum(1 for i in user_text if i in a2_list)
+                 b1 = sum(1 for i in user_text if i in b1_list)
+                 b2 = sum(1 for i in user_text if i in b2_list)
+                 c1 = sum(1 for i in user_text if i in c1_list)
+
+                 count_word = a1 + a2 + b1 + b2 + c1
+                 a1 = a1 / count_word
+                 a2 = a2 / count_word
+                 b1 = b1 / count_word
+                 b2 = b2 / count_word
+                 c1 = c1 / count_word
+
+                 df = pd.DataFrame(columns=['subtitles', 'a1', 'a2', 'b1', 'b2', 'c1', 'fres', 'fkgl'])
+                 data = []
+                 data.append({'subtitles': ' '.join(user_text),
+                          'a1': a1,
+                          'a2': a2,
+                          'b1': b1,
+                          'b2': b2,
+                          'c1': c1,
+                          'fres': fres,
+                          'fkgl': fkgl})
+                 df = pd.concat([df, pd.DataFrame(data)], ignore_index=True)
+                 predictions = model.predict(df)
+
+                 cerf = cerf(predictions)
+
+                 st.write(f'Уровень сложности: {cerf}')
+             except:
+                 st.write(f'Уровень сложности: A2')
+
          else:
-             st.write(f"Текст написан на языке: {lang}")
+             st.write(f"Похоже, что веденный текст слишком короткий или написан не на английском языке, попробуйте изменить запрос")
 
 # Описание поля загрузки файла
 st.write("")
@@ -109,7 +168,7 @@ srt_file = st.file_uploader("", type=".srt")
 
 
 if srt_file:
-    # Получаем байтовый поток для загруженного файла
+    # получаем байтовый поток для загруженного файла
     file_bytes = srt_file.read()
     file_string = file_bytes.decode('latin-1')
 
@@ -122,12 +181,7 @@ if srt_file:
     subs = ' '.join([i.text for i in subs])
 
     # fres/fkgl
-    sentences = len(re.split(r"[.!?]", subs))
-    words = len(subs.split(' '))
-    syllables = sum(subs.count(g) for g in 'aeoiu') + subs.count('y') / 2
-
-    fres = 206.835 - (words / sentences) * 1.015 - (syllables / words) * 84.6
-    fkgl = (words / sentences) * 0.39 + (syllables / words) * 11.8 - 15.59
+    fres, fkgl = fres_fkgl(subs)
 
     # Очистка
     subs = clean_subs(subs)
@@ -167,17 +221,5 @@ if srt_file:
         predictions = np.mean(predictions)
         # Кнопка "Определить уровень сложности"
         if st.button("Определить уровень сложности"):
-            if predictions < 3.5:
-                st.text('CEFR: A2')
-            elif  predictions < 4:
-                st.text('CEFR: A2/B1')
-            elif  predictions < 5:
-                st.text('CEFR: B1')
-            elif  predictions < 5.5:
-                st.text('CEFR: B1/B2')
-            elif  predictions < 6.5:
-                st.text('CEFR: B2')
-            elif predictions < 7:
-                st.text('CEFR: B1/C1')
-            else:
-                st.text('CEFR: C1')
+            cerf = cerf(predictions)
+            st.write(f'Уровень сложности: {cerf}')
